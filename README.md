@@ -4,9 +4,9 @@
 ## 🎯 Objectifs du TD
 À la fin de ce TD, vous saurez :
 - Rédiger un **contrat OpenAPI/Swagger** de base,
-- **implémenter** des endpoints REST minimaux,
-- manipuler **Git** (clone, branche, commit, push) et comprendre le **workflow** minimal,
-- utiliser les **outils** essentiels (GitHub, Git Bash, Postman, cURL, IntelliJ IDEA).
+- **Implémenter** des endpoints REST minimaux,
+- Manipuler **Git** (clone, branche, commit, push) et comprendre le **workflow** minimal,
+- Utiliser les **outils** essentiels (GitHub, Git Bash, Postman, cURL, IntelliJ IDEA).
 
 ---
 
