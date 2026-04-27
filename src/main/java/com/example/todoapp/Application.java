@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,6 +60,44 @@ public class Application {
                 sendResponse(exchange, 200, JsonUtils.serialize(task.get()));
             } else {
                 sendResponse(exchange, 404, null);
+            }
+            return;
+        }
+        //endregion
+
+        //region Manage DELETE /tasks/{id}
+        m = ID_PATH.matcher(path);
+        if ("DELETE".equals(method) && m.matches()) {
+            int id = Integer.parseInt(m.group(1));
+            boolean deleted = dao.deleteById(id);
+
+            sendResponse(exchange, deleted ? 204 : 404, null);
+            return;
+        }
+        //endregion
+
+        //region Manage PUT /tasks/{id}
+        m = ID_PATH.matcher(path);
+        if ("PUT".equals(method) && m.matches()) {
+            int id = Integer.parseInt(m.group(1));
+            Task input = JsonUtils.deserialize(new String(exchange.getRequestBody().readAllBytes(), UTF_8), Task.class);
+            boolean updated = dao.update(id, input);
+
+            sendResponse(exchange, updated ? 204 : 404, null);
+            return;
+        }
+        //endregion
+        //region Manage GET /tasks
+        if ("GET".equals(method) && "/tasks".equals(path)) {
+            String query = exchange.getRequestURI().getQuery();
+            boolean todoOnly = query != null && query.contains("todo-only=true");
+
+            List<Task> tasks = todoOnly ? dao.findAllTodo() : dao.findAll();
+
+            if (tasks.isEmpty()) {
+                sendResponse(exchange, 204, null);
+            } else {
+                sendResponse(exchange, 200, JsonUtils.serialize(tasks));
             }
             return;
         }
