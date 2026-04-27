@@ -37,6 +37,29 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Task'
+        get:
+            tags: [ tasks ]
+            summary: Récupérer toutes les tâches
+            operationId: getAllTasks
+            parameters:
+                -   in: query
+                    name: todo-only
+                    required: false
+                    description: Si true, retourne uniquement les tâches non terminées
+                    schema:
+                        type: boolean
+                        example: true
+            responses:
+                '200':
+                    description: Liste des tâches
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Task'
+                '204':
+                    description: Aucune tâche trouvée
 
     /tasks/{id}:
         parameters:
@@ -61,6 +84,30 @@ paths:
                                 $ref: '#/components/schemas/Task'
                 '404':
                     description: Tâche non trouvée
+        delete:
+            tags: [ tasks ]
+            summary: Supprimer une tâche
+            operationId: deleteTaskById
+            responses:
+                '204':
+                    description: Tâche supprimée avec succès
+                '404':
+                    description: Tâche non trouvée
+        put:
+            tags: [ tasks ]
+            summary: Modifier une tâche
+            operationId: updateTaskById
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/Task'
+            responses:
+                '204':
+                    description: Tâche modifiée avec succès
+                '404':
+                    description: Tâche non trouvée
 components:
     schemas:
         Task:
@@ -72,7 +119,7 @@ components:
                     example: 1
                 title:
                     type: string
-                    nullable: false
+                    nullable: true
                     example: Acheter du lait
                 description:
                     type: string
@@ -80,7 +127,7 @@ components:
                     example: 2L demi-écrémé
                 done:
                     type: boolean
-                    nullable: false
+                    nullable: true
                     example: false
             required:
                 - id
