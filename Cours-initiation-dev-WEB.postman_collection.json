@@ -1,0 +1,99 @@
+{
+	"info": {
+		"name": "Cours initiation dev WEB",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		}
+	],
+	"item": [
+		{
+			"name": "GET /tasks/{id}",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "{{baseUrl}}/tasks/1",
+					"host": ["{{baseUrl}}"],
+					"path": ["tasks", "1"]
+				}
+			}
+		},
+		{
+			"name": "GET /tasks",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "{{baseUrl}}/tasks",
+					"host": ["{{baseUrl}}"],
+					"path": ["tasks"]
+				}
+			}
+		},
+		{
+			"name": "POST /tasks",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/tasks",
+					"host": ["{{baseUrl}}"],
+					"path": ["tasks"]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": 4,\n  \"title\": \"Projet cordée\",\n  \"description\": \"Ta voiture participe à course en cours\",\n  \"done\": false\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "PUT /tasks/{id}",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/tasks/1",
+					"host": ["{{baseUrl}}"],
+					"path": ["tasks", "1"]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": 1,\n  \"title\": \"Réviser DS de maths\",\n  \"description\": \"Séries numériques et probabilités.\",\n  \"done\": true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			}
+		},
+		{
+			"name": "DELETE /tasks/{id}",
+			"request": {
+				"method": "DELETE",
+				"url": {
+					"raw": "{{baseUrl}}/tasks/1",
+					"host": ["{{baseUrl}}"],
+					"path": ["tasks", "1"]
+				}
+			}
+		}
+	]
+}
