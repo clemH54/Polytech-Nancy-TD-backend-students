@@ -1,8 +1,8 @@
 package com.example.todoapp.presenation;
 
 import com.example.todoapp.JsonUtils;
-import com.example.todoapp.business.model.Task;
 import com.example.todoapp.business.service.TaskService;
+import com.example.todoapp.presenation.dto.*;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
@@ -27,12 +27,31 @@ public class TaskController {
 
         // POST /tasks
         if ("POST".equals(method) && "/tasks".equals(path)) {
-            Task input = JsonUtils.deserialize(
-                    new String(exchange.getRequestBody().readAllBytes(), UTF_8), Task.class);
-            Task created = service.create(input);
+            try {
+                TaskCreateDTO input = JsonUtils.deserialize(
+                        new String(exchange.getRequestBody().readAllBytes(), UTF_8),
+                        TaskCreateDTO.class);
+                TaskResponseDTO created = service.create(input);
+                exchange.getResponseHeaders().add("Location", "/tasks/" + created.id());
+                sendResponse(exchange, 201, JsonUtils.serialize(created));
+            } catch (IllegalArgumentException e) {
+                sendError(exchange, e.getMessage());
+            } catch (RuntimeException e) {
+                sendResponse(exchange, 500, "{\"error\":\"" + e.getMessage() + "\"}");
+            }
+            return;
+        }
 
-            exchange.getResponseHeaders().add("Location", "/tasks/" + created.id());
-            sendResponse(exchange, 201, JsonUtils.serialize(created));
+        // GET /tasks  (+ ?todo-only=true)
+        if ("GET".equals(method) && "/tasks".equals(path)) {
+            String query     = exchange.getRequestURI().getQuery();
+            boolean todoOnly = query != null && query.contains("todo-only=true");
+            List<TaskResponseDTO> tasks = todoOnly ? service.findAllTodo() : service.findAll();
+            if (tasks.isEmpty()) {
+                sendResponse(exchange, 204, null);
+            } else {
+                sendResponse(exchange, 200, JsonUtils.serialize(tasks));
+            }
             return;
         }
 
@@ -41,8 +60,7 @@ public class TaskController {
         // GET /tasks/{id}
         if ("GET".equals(method) && m.matches()) {
             int id = Integer.parseInt(m.group(1));
-            Optional<Task> task = service.findById(id);
-
+            Optional<TaskResponseDTO> task = service.findById(id);
             if (task.isPresent()) {
                 sendResponse(exchange, 200, JsonUtils.serialize(task.get()));
             } else {
@@ -56,7 +74,6 @@ public class TaskController {
         if ("DELETE".equals(method) && m.matches()) {
             int id = Integer.parseInt(m.group(1));
             boolean deleted = service.delete(id);
-
             sendResponse(exchange, deleted ? 204 : 404, null);
             return;
         }
@@ -65,30 +82,29 @@ public class TaskController {
         m = ID_PATH.matcher(path);
         if ("PUT".equals(method) && m.matches()) {
             int id = Integer.parseInt(m.group(1));
-            Task input = JsonUtils.deserialize(
-                    new String(exchange.getRequestBody().readAllBytes(), UTF_8), Task.class);
-            boolean updated = service.update(id, input);
-
-            sendResponse(exchange, updated ? 204 : 404, null);
-            return;
-        }
-
-        // GET /tasks  (+ ?todo-only=true)
-        if ("GET".equals(method) && "/tasks".equals(path)) {
-            String query    = exchange.getRequestURI().getQuery();
-            boolean todoOnly = query != null && query.contains("todo-only=true");
-
-            List<Task> tasks = todoOnly ? service.findAllTodo() : service.findAll();
-
-            if (tasks.isEmpty()) {
-                sendResponse(exchange, 204, null);
-            } else {
-                sendResponse(exchange, 200, JsonUtils.serialize(tasks));
+            try {
+                TaskUpdateDTO input = JsonUtils.deserialize(
+                        new String(exchange.getRequestBody().readAllBytes(), UTF_8),
+                        TaskUpdateDTO.class);
+                boolean updated = service.update(id, input);
+                sendResponse(exchange, updated ? 204 : 404, null);
+            } catch (IllegalArgumentException e) {
+                sendError(exchange, e.getMessage());
+            } catch (RuntimeException e) {
+                sendResponse(exchange, 500, "{\"error\":\"" + e.getMessage() + "\"}");
             }
             return;
         }
 
         sendResponse(exchange, 404, null);
+    }
+
+    private void sendError(HttpExchange exchange, String rawMessage) throws IOException {
+        String[] parts = rawMessage.split(":", 2);
+        String field   = parts.length == 2 ? parts[0] : "unknown";
+        String message = parts.length == 2 ? parts[1] : rawMessage;
+        ErrorDTO error = new ErrorDTO(field, message);
+        sendResponse(exchange, 400, JsonUtils.serialize(error));
     }
 
     private void sendResponse(HttpExchange exchange, int status, String json) throws IOException {

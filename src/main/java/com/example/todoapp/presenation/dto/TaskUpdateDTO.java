@@ -1,4 +1,4 @@
-package com.example.todoapp.dto;
+package com.example.todoapp.presenation.dto;
 
 public record TaskUpdateDTO(String title, String description, boolean done) {
 

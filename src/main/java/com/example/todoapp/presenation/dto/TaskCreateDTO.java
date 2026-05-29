@@ -1,4 +1,4 @@
-package com.example.todoapp.dto;
+package com.example.todoapp.presenation.dto;
 
 public record TaskCreateDTO(String title, String description) {
 

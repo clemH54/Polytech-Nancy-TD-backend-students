@@ -15,14 +15,14 @@ public class TaskDao {
         initTable();
         seedData();
     }
-    /** Initialisation de la table*/
+
     private void initTable() {
         String sql = """
                 CREATE TABLE IF NOT EXISTS tasks (
-                    id INTEGER PRIMARY KEY,
-                    title   TEXT    NOT NULL,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
                     description TEXT,
-                    done    INTEGER NOT NULL DEFAULT 0
+                    done INTEGER NOT NULL DEFAULT 0
                 );
                 """;
 
@@ -37,29 +37,34 @@ public class TaskDao {
     private void seedData() {
         if (count() > 0) return;
 
-        save(new Task(1, "Réviser DS de maths",  "Séries numériques et probabilités.", false));
-        save(new Task(2, "Valider mon PIVE",      "PIVE Club Poker.",                  true));
-        save(new Task(3, "Choisir mon parcours de 4A", "SIR ou SIA ?",                false));
+        save(new Task(null, "Réviser DS de maths",       "Séries numériques et probabilités.", false));
+        save(new Task(null, "Valider mon PIVE",           "PIVE Club Poker.",                  true));
+        save(new Task(null, "Choisir mon parcours de 4A", "SIR ou SIA ?",                      false));
     }
 
     public Task save(Task task) {
         String sql = """
-                INSERT OR REPLACE INTO tasks (id, title, description, done)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO tasks (title, description, done)
+                VALUES (?, ?, ?)
                 """;
 
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            ps.setInt(1, task.id());
-            ps.setString(2, task.title());
-            ps.setString(3, task.description());
-            ps.setInt(4, task.done() ? 1 : 0);
+            ps.setString(1, task.title());
+            ps.setString(2, task.description());
+            ps.setInt(3, task.done() ? 1 : 0);
             ps.executeUpdate();
+
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    return new Task(keys.getInt(1), task.title(), task.description(), task.done());
+                }
+            }
             return task;
 
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save task id=" + task.id(), e);
+            throw new RuntimeException("Failed to save task", e);
         }
     }
 
@@ -110,9 +115,9 @@ public class TaskDao {
     public boolean update(int id, Task task) {
         String sql = """
                 UPDATE tasks
-                   SET title   = ?,
+                   SET title       = ?,
                        description = ?,
-                       done    = ?
+                       done        = ?
                  WHERE id = ?
                 """;
 
@@ -170,7 +175,6 @@ public class TaskDao {
             return rs.next() ? rs.getInt(1) : 0;
 
         } catch (SQLException e) {
-            // Table may not exist yet — treated as empty.
             return 0;
         }
     }
