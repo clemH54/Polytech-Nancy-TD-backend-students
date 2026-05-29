@@ -14,7 +14,7 @@ tags:
 
 paths:
     /tasks:
-        post:
+        xpost:
             tags: [ tasks ]
             summary: Créer une tâche
             operationId: createTask
