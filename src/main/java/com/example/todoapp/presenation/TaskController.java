@@ -22,81 +22,83 @@ public class TaskController {
     private final TaskService service = new TaskService();
 
     public void handle(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        String path   = exchange.getRequestURI().getPath();
+        try {
+            String method = exchange.getRequestMethod();
+            String path   = exchange.getRequestURI().getPath();
 
-        // POST /tasks
-        if ("POST".equals(method) && "/tasks".equals(path)) {
-            try {
-                TaskCreateDTO input = JsonUtils.deserialize(
-                        new String(exchange.getRequestBody().readAllBytes(), UTF_8),
-                        TaskCreateDTO.class);
-                TaskResponseDTO created = service.create(input);
-                exchange.getResponseHeaders().add("Location", "/tasks/" + created.id());
-                sendResponse(exchange, 201, JsonUtils.serialize(created));
-            } catch (IllegalArgumentException e) {
-                sendError(exchange, e.getMessage());
-            } catch (RuntimeException e) {
-                sendResponse(exchange, 500, "{\"error\":\"" + e.getMessage() + "\"}");
+            // POST /tasks
+            if ("POST".equals(method) && "/tasks".equals(path)) {
+                try {
+                    TaskCreateDTO input = JsonUtils.deserialize(
+                            new String(exchange.getRequestBody().readAllBytes(), UTF_8),
+                            TaskCreateDTO.class);
+                    TaskResponseDTO created = service.create(input);
+                    exchange.getResponseHeaders().add("Location", "/tasks/" + created.id());
+                    sendResponse(exchange, 201, JsonUtils.serialize(created));
+                } catch (IllegalArgumentException e) {
+                    sendError(exchange, e.getMessage());
+                }
+                return;
             }
-            return;
-        }
 
-        // GET /tasks  (+ ?todo-only=true)
-        if ("GET".equals(method) && "/tasks".equals(path)) {
-            String query     = exchange.getRequestURI().getQuery();
-            boolean todoOnly = query != null && query.contains("todo-only=true");
-            List<TaskResponseDTO> tasks = todoOnly ? service.findAllTodo() : service.findAll();
-            if (tasks.isEmpty()) {
-                sendResponse(exchange, 204, null);
-            } else {
-                sendResponse(exchange, 200, JsonUtils.serialize(tasks));
+            // GET /tasks  (+ ?todo-only=true)
+            if ("GET".equals(method) && "/tasks".equals(path)) {
+                String query     = exchange.getRequestURI().getQuery();
+                boolean todoOnly = query != null && query.contains("todo-only=true");
+                List<TaskResponseDTO> tasks = todoOnly ? service.findAllTodo() : service.findAll();
+                if (tasks.isEmpty()) {
+                    sendResponse(exchange, 204, null);
+                } else {
+                    sendResponse(exchange, 200, JsonUtils.serialize(tasks));
+                }
+                return;
             }
-            return;
-        }
 
-        Matcher m = ID_PATH.matcher(path);
+            Matcher m = ID_PATH.matcher(path);
 
-        // GET /tasks/{id}
-        if ("GET".equals(method) && m.matches()) {
-            int id = Integer.parseInt(m.group(1));
-            Optional<TaskResponseDTO> task = service.findById(id);
-            if (task.isPresent()) {
-                sendResponse(exchange, 200, JsonUtils.serialize(task.get()));
-            } else {
-                sendResponse(exchange, 404, null);
+            // GET /tasks/{id}
+            if ("GET".equals(method) && m.matches()) {
+                int id = Integer.parseInt(m.group(1));
+                Optional<TaskResponseDTO> task = service.findById(id);
+                if (task.isPresent()) {
+                    sendResponse(exchange, 200, JsonUtils.serialize(task.get()));
+                } else {
+                    sendResponse(exchange, 404, null);
+                }
+                return;
             }
-            return;
-        }
 
-        // DELETE /tasks/{id}
-        m = ID_PATH.matcher(path);
-        if ("DELETE".equals(method) && m.matches()) {
-            int id = Integer.parseInt(m.group(1));
-            boolean deleted = service.delete(id);
-            sendResponse(exchange, deleted ? 204 : 404, null);
-            return;
-        }
-
-        // PUT /tasks/{id}
-        m = ID_PATH.matcher(path);
-        if ("PUT".equals(method) && m.matches()) {
-            int id = Integer.parseInt(m.group(1));
-            try {
-                TaskUpdateDTO input = JsonUtils.deserialize(
-                        new String(exchange.getRequestBody().readAllBytes(), UTF_8),
-                        TaskUpdateDTO.class);
-                boolean updated = service.update(id, input);
-                sendResponse(exchange, updated ? 204 : 404, null);
-            } catch (IllegalArgumentException e) {
-                sendError(exchange, e.getMessage());
-            } catch (RuntimeException e) {
-                sendResponse(exchange, 500, "{\"error\":\"" + e.getMessage() + "\"}");
+            // DELETE /tasks/{id}
+            m = ID_PATH.matcher(path);
+            if ("DELETE".equals(method) && m.matches()) {
+                int id = Integer.parseInt(m.group(1));
+                boolean deleted = service.delete(id);
+                sendResponse(exchange, deleted ? 204 : 404, null);
+                return;
             }
-            return;
-        }
 
-        sendResponse(exchange, 404, null);
+            // PUT /tasks/{id}
+            m = ID_PATH.matcher(path);
+            if ("PUT".equals(method) && m.matches()) {
+                int id = Integer.parseInt(m.group(1));
+                try {
+                    TaskUpdateDTO input = JsonUtils.deserialize(
+                            new String(exchange.getRequestBody().readAllBytes(), UTF_8),
+                            TaskUpdateDTO.class);
+                    boolean updated = service.update(id, input);
+                    sendResponse(exchange, updated ? 204 : 404, null);
+                } catch (IllegalArgumentException e) {
+                    sendError(exchange, e.getMessage());
+                }
+                return;
+            }
+
+            sendResponse(exchange, 404, null);
+
+        } catch (Exception e) {
+            sendResponse(exchange, 500,
+                    "{\"error\":\"Erreur interne du serveur : " + e.getMessage() + "\"}");
+        }
     }
 
     private void sendError(HttpExchange exchange, String rawMessage) throws IOException {
